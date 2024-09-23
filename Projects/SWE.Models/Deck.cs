@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 
 namespace SWE.Models
 {
-    internal class Deck
+    public class Deck
     {
         public Deck(string Name) {
             this.Name = Name;
+            this.PlayerDeck = new List<Card>();
         }
         public string Name;
         
-        public Vector<Card> PlayerDeck { get; set; }
+        public List<Card> PlayerDeck { get; set; }
     }
 }
