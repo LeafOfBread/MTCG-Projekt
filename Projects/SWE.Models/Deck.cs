@@ -11,10 +11,10 @@ namespace SWE.Models
     {
         public Deck(string Name) {
             this.Name = Name;
-            this.PlayerDeck = new List<Card>();
+            this.PlayerStack = new List<Card>();
         }
         public string Name;
         
-        public List<Card> PlayerDeck { get; set; }
+        public List<Card> PlayerStack { get; set; }
     }
 }

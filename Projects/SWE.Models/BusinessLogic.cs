@@ -21,7 +21,7 @@ namespace SWE.Models
 
         bool IsPureMonster()
         {
-            if (Player1.Deck.PlayerDeck[0].GetType == Player2.Deck.PlayerDeck[0].GetType) return true;
+            if (Player1.PlayingDeck.PlayerStack[0].GetType == Player2.PlayingDeck.PlayerStack[0].GetType) return true;
             return false;
         }
         
