@@ -25,10 +25,6 @@ namespace SWE.Models
             return false;
         }
         
-        void ChooseRandomCard()
-        {
-            //to be implemented
-        }
         bool IsEndlessLoop()
         {
             if (this.RoundCounter > 100) return true;

@@ -15,11 +15,6 @@ namespace SWE.Models
             this.Dmg = Dmg;
         }
 
-        //*public enum Type
-        //{
-          //  MonsterCard = 0,
-            //SpellCard = 1
-        //}
         public enum Element
         {
             Fire = 0,
@@ -31,6 +26,7 @@ namespace SWE.Models
         public string Name;
         public int Dmg;
         public Type CardType;
+        public bool IsChosen;
 
         public virtual void Attack(Card OpponentCard)
         { 

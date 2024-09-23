@@ -5,17 +5,21 @@ using SWE.Models;
 string UserInput = "";
 Deck deck1 = new Deck("Deck1");
 Deck PlayingDeck1 = new Deck("PlayingDeck1");
-User newUser = new User("User1", 1, 100, 20, 0, deck1, PlayingDeck1);
+User newUser = new User("User1", 1, 100, 20, 0, deck1, PlayingDeck1, 10, 2);
 
-Console.ForegroundColor = ConsoleColor.DarkBlue;
+Console.ForegroundColor = ConsoleColor.Red;
 Console.WriteLine("\nWelcome to the MTCG\n\n");
 
 
 while (UserInput != "E" || UserInput != "e")
 {
+    Console.Clear();
     if (newUser.getPackages() != 0) Console.WriteLine("You have " + newUser.getPackages() + " packages to open.\n Press (O) to open them");
 
     else Console.WriteLine("You have no packages to open.");
+    if (newUser.getCoins() < 5) Console.WriteLine("You do not have enough coins to buy a package.");
+
+    Console.WriteLine("Current ELO: " + $"{newUser.getElo()}");
 
     Console.WriteLine("Press (X) to buy some Monster Packages:\nPress (C) to choose your Cards for your Deck.\nPress (E) to exit.\nCoins: " + newUser.getCoins());
 

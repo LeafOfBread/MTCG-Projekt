@@ -11,7 +11,7 @@ namespace SWE.Models
 {
     public class User
     {
-        public User(string UserName, int ID, int Elo, int Coins, int Packages, Deck Stack, Deck PlayingDeck)
+        public User(string UserName, int ID, int Elo, int Coins, int Packages, Deck Stack, Deck PlayingDeck, int Wins, int Losses)
         {
             this.UserName = UserName;
             this.ID = ID;
@@ -20,12 +20,16 @@ namespace SWE.Models
             this.Packages = Packages;
             this.Stack = Stack;
             this.PlayingDeck = PlayingDeck;
+            this.Wins = Wins;
+            this.Losses = Losses;
         }
         private int ID { get; set; }
         public string UserName;
         private string Password;
         private string Token;
         public int Elo;
+        public int Wins;
+        public int Losses;
         private int Coins { get; set; }
         public Deck Stack;
         public Deck PlayingDeck;
@@ -44,42 +48,51 @@ namespace SWE.Models
                 Console.WriteLine("You have no Cards to choose from!");
                 return;
             }
-            else if (this.Stack.PlayerStack.Count <= 3)
+            else if (this.Stack.PlayerStack.Count <= 4)
             {
                 foreach (Card Card in this.Stack.PlayerStack)
                 {
                     PlayingDeck.PlayerStack.Add(Card);
                 }
             }
-            else
+            else if (this.Stack.PlayerStack.Count >= 5)
             {
                 Console.WriteLine("Choose your Cards for your Deck!\n");
                 int counter = 1;
                 foreach (Card Card in this.Stack.PlayerStack)
-                { 
-                    Console.WriteLine($"{counter} {Card.Name}: {Card.Dmg}");
+                {
+                    if (!Card.IsChosen) Console.WriteLine($"{counter}: {Card.Name}: {Card.Dmg}");
                     counter++;
                 }
                 for (int i = 0; i < 4; i++)
                 {
                     Console.WriteLine("Choose your " + $"{i}" + " Card: ");
                     int CardNumber = Convert.ToInt32(Console.ReadLine()) - 1;
-                    if (CardNumber >= 0 && CardNumber < this.Stack.PlayerStack.Count)
+                    if (CardNumber >= 0 && CardNumber < this.Stack.PlayerStack.Count && !this.Stack.PlayerStack[CardNumber].IsChosen)
                     {
                         PlayingDeck.PlayerStack.Add(this.Stack.PlayerStack[CardNumber]);
+                        this.Stack.PlayerStack[CardNumber].IsChosen = true;
                     }
                     else
                     {
-                        Console.WriteLine("Invalid card number.");
+                        Console.WriteLine("Invalid card.");
                     }
                 }
             }
         }
 
 
-        public void showPlayerDeck()
+        public void showPlayerStack()
         {
             foreach (Card Card in this.Stack.PlayerStack)
+            {
+                Console.WriteLine($"{Card.Name}/{Card.Dmg}/{Card.Description}");
+            }
+        }
+
+        public void showPlayerDeck()
+        {
+            foreach (Card Card in this.PlayingDeck.PlayerStack)
             {
                 Console.WriteLine($"{Card.Name}/{Card.Dmg}/{Card.Description}");
             }
@@ -91,8 +104,11 @@ namespace SWE.Models
         }
         public void BuyPackage()
         {
-            this.Coins = this.Coins - 5;
-            this.Packages++;
+            if (this.Coins >= 5)
+            {
+                this.Coins = this.Coins - 5;
+                this.Packages++;
+            }
         }
 
         public void OpenPackage()
@@ -137,6 +153,15 @@ namespace SWE.Models
         public int getPackages()
         {
             return this.Packages;
+        }
+
+        public int getElo()
+        {
+            return this.Elo;
+        }
+        public int EloCalculation()
+        {
+            return Wins * 3 - Losses * 5 + 100;
         }
     }
 }
