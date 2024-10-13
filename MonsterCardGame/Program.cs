@@ -1,58 +1,104 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using SWE.Models;
+using System.Net.Security;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Net.Sockets;
+using System.Net;
+using System.Security.Cryptography;
+using System.Runtime.InteropServices.Marshalling;
+using System.Reflection.Metadata;
 
-
-string UserInput = "";
-Deck deck1 = new Deck("Deck1");
-Deck PlayingDeck1 = new Deck("PlayingDeck1");
-User newUser = new User("User1", 1, 100, 20, 0, deck1, PlayingDeck1, 10, 2);
-
-Console.ForegroundColor = ConsoleColor.Red;
-Console.WriteLine("\nWelcome to the MTCG\n\n");
-
-
-while (UserInput != "E" || UserInput != "e")
-{
-    Console.Clear();
-    if (newUser.getPackages() != 0) Console.WriteLine("You have " + newUser.getPackages() + " packages to open.\n Press (O) to open them");
-
-    else Console.WriteLine("You have no packages to open.");
-    if (newUser.getCoins() < 5) Console.WriteLine("You do not have enough coins to buy a package.");
-
-    Console.WriteLine("Current ELO: " + $"{newUser.getElo()}");
-
-    Console.WriteLine("Press (X) to buy some Monster Packages:\nPress (C) to choose your Cards for your Deck.\nPress (E) to exit.\nCoins: " + newUser.getCoins());
-
-    UserInput = Console.ReadLine();
-
-    if (UserInput == "X" || UserInput == "x")
+class Program {
+    static void Main(string[] args) 
     {
-        newUser.BuyPackage();
-        foreach (Card Card in newUser.Stack.PlayerStack)
+        TcpServer.Start("localhost", 10001);
+    }
+
+    class TcpServer
+    {
+        private Dictionary<string, <Action<string, StreamWriter>> GetRoutes = new ();
+        private Dictionary<string, <Action<string, StreamWriter>> PostRoutes = new ();
+        private Dictionary<string, <Action<string, string, StreamWriter, string>> ProtectedRoutes = new ();
+
+        private List<User> users = new List<User>();
+        private Dictionary<string, string> userSessions = new();
+
+        public static void Start(string host, int port)
         {
-            Console.WriteLine($"{Card.Description}/{Card.Name}/{Card.Dmg}");
+            InitRoutes();
+            IPAddress ip;
+
+            if (host == "localhost") ip = IPAddress.Any;
+            else ip = IPAddress.Parse(host);
+
+            TcpListener server = new TcpListener(ip, port);
+            server.Start();
+
+            Console.WriteLine($"Server started on {host}:{port}");
+
+            while(true)
+            {
+                TcpClient client = server.AcceptTcpClient();
+                Task.Run(() => HandleClient(client));
+            }
         }
-    }
-    else if (UserInput == "E" || UserInput == "e")
-    {
-        Console.WriteLine("Goodbye!");
-        break;
-    }
-    else if (UserInput == "O" || UserInput == "o")
-    {
-        newUser.OpenPackage();
-        foreach (Card Card in newUser.Stack.PlayerStack)
+
+        public static void InitRoutes() 
         {
-            Console.WriteLine($"{Card.Description}/{Card.Name}/{Card.Dmg}");
+            GetRoutes.Add("api/test", HandleGetTest);
+            PostRoutes.Add("/sessions", HandleLogin);
+            PostRoutes.Add("/users", HandleRegisterUser);
+            ProtectedRoutes.Add("/api/protected", HandleProtected);
         }
-    }
-    else if (UserInput == "C" || UserInput == "c")
-    {
-        newUser.ChooseDeck();
-        newUser.showPlayerDeck();
-    }
-    else
-    {
-        Console.WriteLine("Invalid Input");
-    }
+
+        public static void HandleClient(TcpClient client)
+        {
+            using (NetworkStream networkStream = client.GetStream())
+            using (StreamReader reader = new StreamReader(networkStream))
+            using (StreamWriter writer = new StreamWriter(networkStream) { AutoFlush = true })
+            {
+                string requestLine = reader.ReadLine();
+                if (string.IsNullOrEmpty(requestLine)) return;
+
+                string[] requestParts = requestLine.Split(' ');
+                if (requestParts.Length < 3) return;
+
+                string method = requestParts[0];
+                string path = requestParts[1];
+
+                int contentLength = 0;
+                string authHeader = null;
+                string line;
+                while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+                {
+                    if (line.StartsWith("Content-Length:"))
+                    {
+                        contentLength = int.Parse(line.Split(' ')[1]);
+                    }
+                    else if (line.StartsWith("Authorization:"))
+                    {
+                        authHeader = line.Split(' ')[1];
+                    }
+                }
+
+                if (method == "GET" && GetRoutes.ContainsKey(path))
+                {
+                    GetRoutes[path](path, writer);
+                }
+                else if (method == "POST" && PostRoutes.ContainsKey(path))
+                {
+                    string body = reader.ReadToEnd();
+                    PostRoutes[path](body, writer);
+                }
+                else if (method == "POST" && ProtectedRoutes.ContainsKey(path))
+                {
+                    string body = reader.ReadToEnd();
+                    ProtectedRoutes[path](body, authHeader, writer, path);
+                }
+                else
+                {
+                    writer.WriteLine("HTTP/1.1 404 Not Found");
+                }
+            }
 }

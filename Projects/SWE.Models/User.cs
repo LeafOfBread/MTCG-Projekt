@@ -25,7 +25,7 @@ namespace SWE.Models
         }
         private int ID { get; set; }
         public string UserName;
-        private string Password;
+        public string Password;
         private string Token;
         public int Elo;
         public int Wins;
