@@ -22,11 +22,10 @@ namespace SWE.Models
             Normal = 2
         }
 
-        public string Description;
-        public string Name;
-        public int Dmg;
-        public Type CardType;
-        public bool IsChosen;
+        public string Description { get; set; }
+        public string Name { get; set; }
+        public int Dmg { get; set; }
+        public bool IsChosen { get; set; }
 
         public virtual void Attack(Card OpponentCard)
         { 

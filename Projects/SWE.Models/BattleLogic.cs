@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace SWE.Models
 {
-    internal class BusinessLogic
+    internal class BattleLogic
     {
-        public BusinessLogic(int RoundCounter, User Player1, User Player2)
+        public BattleLogic(int RoundCounter, User Player1, User Player2)
         {
             this.RoundCounter = RoundCounter;
             this.Player1 = Player1;
