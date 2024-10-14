@@ -8,27 +8,25 @@ namespace SWE.Models
 {
     internal class BattleLogic
     {
-        public BattleLogic(int RoundCounter, User Player1, User Player2)
+        public BattleLogic(int roundCounter, User player1, User player2)
         {
-            this.RoundCounter = RoundCounter;
-            this.Player1 = Player1;
-            this.Player2 = Player2;
+            RoundCounter = roundCounter;
+            Player1 = player1;
+            Player2 = player2;
         }
+
         public User Player1 { get; set; }
         public User Player2 { get; set; }
-
         public int RoundCounter { get; set; }
 
-        bool IsPureMonster()
+        private bool IsPureMonster(int currentPlayer1Card, int currentPlayer2Card)
         {
-            if (Player1.PlayingDeck.PlayerStack[0].GetType == Player2.PlayingDeck.PlayerStack[0].GetType) return true;
-            return false;
+            return Player1.PlayingDeck.PlayerStack[currentPlayer1Card].GetType() == Player2.PlayingDeck.PlayerStack[currentPlayer2Card].GetType();
         }
-        
-        bool IsEndlessLoop()
+
+        private bool IsEndlessLoop()
         {
-            if (this.RoundCounter > 100) return true;
-            else return false;
+            return RoundCounter > 100;
         }
     }
 }

@@ -8,16 +8,15 @@ namespace SWE.Models
 {
     internal class ScoreBoard
     {
-        public ScoreBoard(int TotalPlayers, int TotalBattles, List<User> users)
+        public ScoreBoard(int totalPlayers, int totalBattles, List<User> users)
         {
-            this.TotalPlayers = TotalPlayers;
-            this.TotalBattles = TotalBattles;
-            this.users = users;
+            TotalPlayers = totalPlayers;
+            TotalBattles = totalBattles;
+            Users = users;
         }
 
-        public int TotalPlayers;
-        public int TotalBattles;
-
-        public List<User> users;
+        public int TotalPlayers { get; set; }
+        public int TotalBattles { get; set; }
+        public List<User> Users { get; set; }
     }
 }

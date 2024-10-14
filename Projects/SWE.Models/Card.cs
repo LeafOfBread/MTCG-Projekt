@@ -8,66 +8,65 @@ namespace SWE.Models
 {
     public abstract class Card
     {
-        public Card(string Description, string Name, int Dmg)
+        protected Card(string description, string name, int damage)
         {
-            this.Description = Description;
-            this.Name = Name;
-            this.Dmg = Dmg;
+            Description = description;
+            Name = name;
+            Damage = damage;
         }
 
         public enum Element
         {
-            Fire = 0,
-            Water = 1,
-            Normal = 2
+            Fire,
+            Water,
+            Normal
         }
 
         public string Description { get; set; }
         public string Name { get; set; }
-        public int Dmg { get; set; }
+        public int Damage { get; set; }
         public bool IsChosen { get; set; }
 
-        public virtual void Attack(Card OpponentCard)
-        { 
-            //todo
-        }
+        public abstract void Attack(Card opponentCard);
     }
 
-    public class MonsterCard : Card 
-    { 
-    
-        public MonsterCard(string Description, string Name, int Dmg)
-            : base(Description, Name, Dmg) { }
+    public class MonsterCard : Card
+    {
+        public MonsterCard(string description, string name, int damage)
+            : base(description, name, damage) { }
 
-        public int HP;
-        public enum MonsterType{
-            Goblin = 0,
-            Dragon = 1,
-            Wizard = 2,
-            Ork = 3,
-            Knight = 4,
-            Kraken = 5,
-            FireElve = 6
+        public int HP { get; set; }
+
+        public enum MonsterType
+        {
+            Goblin,
+            Dragon,
+            Wizard,
+            Ork,
+            Knight,
+            Kraken,
+            FireElve
         }
 
-        public override void Attack(Card OpponentCard)
+        public override void Attack(Card opponentCard)
         {
-            //to be implemented
+            // Implementation to be added
         }
     }
 
     public class SpellCard : Card
     {
-        public SpellCard(string Description, string Name, int Dmg)
-            : base(Description, Name, Dmg) { }
+        public SpellCard(string description, string name, int damage)
+            : base(description, name, damage) { }
+
         public enum Effect
         {
-            //effects to be implemented
+            // Effects to be implemented
         }
 
-        public override void Attack(Card OpponentCard)
+        public override void Attack(Card opponentCard)
         {
-            //to be implemented
+            // Implementation to be added
         }
     }
 }
