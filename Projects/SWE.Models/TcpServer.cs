@@ -11,52 +11,90 @@ using System.Threading.Tasks;
 
 namespace SWE.Models
 {
+    //definiert route mit method, path und handler
+    public class Route
+    {
+        public string Method { get; }
+        public string Path { get; }
+        public Func<string, StreamWriter, Task> Handler { get; }
+
+        public Route(string method, string path, Func<string, StreamWriter, Task> handler)
+        {
+            Method = method;
+            Path = path;
+            Handler = handler;
+        }
+    }
+
+    //definiert router mit routes und methoden zum registrieren und handlen von routes
+    public class Router
+        {
+            private List<Route> routes = new List<Route>();
+
+            public void RegisterRoute(string method, string path, Func<string, StreamWriter, Task> handler)
+        {
+            routes.Add(new Route(method, path, handler));
+        }
+
+        public async Task HandleRequest(string method, string path, StreamWriter writer, string body)
+        {
+            Route route = routes.FirstOrDefault(r => r.Method == method && r.Path == path);
+            if (route != null)
+            {
+                await route.Handler(body, writer);
+            }
+            else
+            {
+                await writer.WriteLineAsync("HTTP/1.1 404 Not Found");
+            }
+        }
+    }
+    //tcp server mit users, sessions und router
     public class TcpServer
     {
-        private static Dictionary<string, Action<string, StreamWriter>> GetRoutes = new();
-        private static Dictionary<string, Action<string, StreamWriter>> PostRoutes = new();
-        private static Dictionary<string, Action<string, string, StreamWriter, string>> ProtectedRoutes = new();
+        private static List<User> users = new List<User>(); //user list
+        private static Dictionary<string, string> userSessions = new(); //dictionary fuer user sessions
+        private static Router router = new Router();
 
-
-        private static List<User> users = new List<User>();
-        private static Dictionary<string, string> userSessions = new();
-
-        public void Start(string host, int port)
+        public void Start(string host, int port) //entry point
         {
-            InitRoutes();
-            IPAddress ip;
-
-            if (host == "localhost") ip = IPAddress.Any;
-            else ip = IPAddress.Parse(host);
+            InitRoutes(); //initialisiert routes
+            IPAddress ip = host == "localhost" ? IPAddress.Any : IPAddress.Parse(host); //setzt ip auf localhost oder host
 
             TcpListener server = new TcpListener(ip, port);
             server.Start();
 
             Console.WriteLine($"Server started on {host}:{port}");
 
-            while (true)
+            while (true) //solange server laeuft, akzeptiere clients
             {
                 TcpClient client = server.AcceptTcpClient();
                 Task.Run(() => HandleClient(client));
             }
         }
 
-        public static void InitRoutes()
+        public static void InitRoutes() // initialisiert routes
         {
-            GetRoutes.Add("api/test", HandleGetTest);
-            PostRoutes.Add("/sessions", HandleLogin);
-            PostRoutes.Add("/users", HandleRegisterUser);
-            ProtectedRoutes.Add("/api/protected", HandleProtected);
+            router.RegisterRoute("GET", "/api/test", async (body, writer) => HandleGetTest(body, writer));
+            router.RegisterRoute("POST", "/sessions", async (body, writer) => HandleLogin(body, writer));
+            router.RegisterRoute("POST", "/users", async (body, writer) => HandleRegisterUser(body, writer));
+
+            //protected route
+            router.RegisterRoute("POST", "/api/protected", async (body, writer) =>
+            {
+                string authHeader = body;
+                HandleProtected(body, authHeader, writer, "api/protected");
+            });
         }
 
         public static void HandleClient(TcpClient client)
         {
-            using (NetworkStream networkStream = client.GetStream())
+            using (NetworkStream networkStream = client.GetStream()) //liest request und schreibt response
             using (StreamReader reader = new StreamReader(networkStream))
             using (StreamWriter writer = new StreamWriter(networkStream) { AutoFlush = true })
             {
                 string requestLine = reader.ReadLine();
-                if (string.IsNullOrEmpty(requestLine)) return;
+                if (string.IsNullOrEmpty(requestLine)) return; //falls request leer, return
 
                 string[] requestParts = requestLine.Split(' ');
                 if (requestParts.Length < 3) return;
@@ -67,7 +105,7 @@ namespace SWE.Models
                 int contentLength = 0;
                 string authHeader = null;
                 string line;
-                while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+                while (!string.IsNullOrEmpty(line = reader.ReadLine())) //liest header
                 {
                     if (line.StartsWith("Content-Length:"))
                     {
@@ -83,33 +121,12 @@ namespace SWE.Models
                 reader.Read(bodyChars, 0, contentLength);
                 string body = new string(bodyChars);
 
-                switch (method)
-                {
-                    case "GET":
-                        if (GetRoutes.ContainsKey(path))
-                        {
-                            GetRoutes[path](path, writer);
-                        }
-                        break;
-                    case "POST":
-                        if (PostRoutes.ContainsKey(path))
-                        {
-                            PostRoutes[path](body, writer);
-                        }
-                        else if (ProtectedRoutes.ContainsKey(path))
-                        {
-                            ProtectedRoutes[path](body, authHeader, writer, path);
-                        }
-                        break;
-                    default:
-                        writer.WriteLine("HTTP/1.1 404 Not Found");
-                        break;
-                }
+                Task.Run(() => router.HandleRequest(method, path, writer, body)).Wait(); //handelt request
             }
             client.Close();
         }
 
-        private static void SendResponse(StreamWriter writer, int Statuscode, string body)
+        private static void SendResponse(StreamWriter writer, int Statuscode, string body) //sendet response
         {
             writer.WriteLine($"HTTP/1.1 {Statuscode}");
             writer.WriteLine("Content-Type: application/json");
@@ -118,7 +135,7 @@ namespace SWE.Models
             writer.WriteLine(body);
         }
 
-        private static (bool IsAuthenticated, string UserToken) IsAuthenticated(string authHeader)
+        private static (bool IsAuthenticated, string UserToken) IsAuthenticated(string authHeader) //prueft ob user authentifiziert ist + returned bool und token
         {
             string username = null;
             string password = null;
@@ -143,7 +160,7 @@ namespace SWE.Models
             User user = JsonConvert.DeserializeObject<User>(body);
             User foundUser = users.FirstOrDefault(u => u.UserName == user.UserName && u.Password == user.Password);
 
-            if (foundUser != null)
+            if (foundUser != null) //prueft ob user existiert
             {
                 string token = Guid.NewGuid().ToString();
                 userSessions.Add(foundUser.UserName, token);
@@ -151,7 +168,7 @@ namespace SWE.Models
             }
             else
             {
-                SendResponse(writer, 401, "{'message': 'Unauthorized'}");
+                SendResponse(writer, 402, "{'message': 'Unauthorized'}");
             }
         }
 
@@ -160,14 +177,14 @@ namespace SWE.Models
             User user = JsonConvert.DeserializeObject<User>(body);
             User foundUser = users.FirstOrDefault(u => u.UserName == user.UserName);
 
-            if (foundUser == null)
+            if (foundUser == null) //prueft ob user existiert und added gegenfalls
             {
                 users.Add(user);
-                SendResponse(writer, 200, "{'message': 'User created'}");
+                SendResponse(writer, 201, "{'message': 'User created'}");
             }
             else
             {
-                SendResponse(writer, 400, "{'message': 'User already exists'}");
+                SendResponse(writer, 401, "{'message': 'User already exists'}");
             }
         }
 
@@ -177,26 +194,26 @@ namespace SWE.Models
             bool isAuthenticated = authResult.IsAuthenticated;
             string userToken = authResult.UserToken;
 
-            if (isAuthenticated)
+            if (isAuthenticated) //prueft ob user authentifiziert ist
             {
-                SendResponse(writer, 200, "{'message': 'Protected data'}");
+                SendResponse(writer, 201, "{'message': 'Protected data'}");
             }
             else
             {
-                SendResponse(writer, 401, "{'message': 'Unauthorized'}");
+                SendResponse(writer, 400, "{'message': 'Unauthorized'}");
             }
         }
 
-        private static void HandleLogout(string body, string authHeader, StreamWriter writer)
+        private static void HandleLogout(string body, string authHeader, StreamWriter writer) //handlet logout
         {
             var authResult = IsAuthenticated(authHeader);
             bool isAuthenticated = authResult.IsAuthenticated;
             string userToken = authResult.UserToken;
 
-            if (isAuthenticated)
+            if (isAuthenticated) //prueft ob user authentifiziert ist
             {
-                userSessions.Remove(userToken);
-                SendResponse(writer, 200, "{'message': 'Logged out'}");
+                userSessions.Remove(userToken); //loescht session token
+                SendResponse(writer, 201, "{'message': 'Logged out'}");
             }
             else
             {
@@ -204,7 +221,7 @@ namespace SWE.Models
             }
         }
 
-        private static string GenerateSessionToken()
+        private static string GenerateSessionToken() //generiert session token
         {
             using (var rng = new RNGCryptoServiceProvider())
             {
