@@ -1,5 +1,5 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -28,10 +28,10 @@ namespace SWE.Models
 
     //definiert router mit routes und methoden zum registrieren und handlen von routes
     public class Router
-        {
-            private List<Route> routes = new List<Route>();
+    {
+        private List<Route> routes = new List<Route>();
 
-            public void RegisterRoute(string method, string path, Func<string, StreamWriter, Task> handler)
+        public void RegisterRoute(string method, string path, Func<string, StreamWriter, Task> handler)
         {
             routes.Add(new Route(method, path, handler));
         }
@@ -157,24 +157,34 @@ namespace SWE.Models
 
         private static void HandleLogin(string body, StreamWriter writer)
         {
-            User user = JsonConvert.DeserializeObject<User>(body);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            User user = JsonSerializer.Deserialize<User>(body, options);
             User foundUser = users.FirstOrDefault(u => u.UserName == user.UserName && u.Password == user.Password);
 
-            if (foundUser != null) //prueft ob user existiert
+            if (foundUser != null) // checks if user exists
             {
                 string token = Guid.NewGuid().ToString();
                 userSessions.Add(foundUser.UserName, token);
-                SendResponse(writer, 200, $"{{'token': '{token}'}}");
+                SendResponse(writer, 200, $"{{\"token\": \"{token}\"}}");
             }
             else
             {
-                SendResponse(writer, 402, "{'message': 'Unauthorized'}");
+                SendResponse(writer, 402, "{\"message\": \"Unauthorized\"}");
             }
         }
 
         private static void HandleRegisterUser(string body, StreamWriter writer)
         {
-            User user = JsonConvert.DeserializeObject<User>(body);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            User user = JsonSerializer.Deserialize<User>(body, options);
             User foundUser = users.FirstOrDefault(u => u.UserName == user.UserName);
 
             if (foundUser == null) //prueft ob user existiert und added gegenfalls

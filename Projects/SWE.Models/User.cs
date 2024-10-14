@@ -11,31 +11,30 @@ namespace SWE.Models
 {
     public class User
     {
-        public User(string UserName, int ID, int Elo, int Coins, int Packages, Deck Stack, Deck PlayingDeck, int Wins, int Losses)
+        public User(string userName, string password, int id, int elo, int coins, int packages, Deck stack, Deck playingDeck, int wins, int losses)
         {
-            this.UserName = UserName;
-            this.ID = ID;
-            this.Elo = Elo;
-            this.Coins = Coins;
-            this.Packages = Packages;
-            this.Stack = Stack;
-            this.PlayingDeck = PlayingDeck;
-            this.Wins = Wins;
-            this.Losses = Losses;
+            UserName = userName;
+            Password = password;
+            ID = id;
+            Elo = elo;
+            Coins = coins;
+            Packages = packages;
+            Stack = stack;
+            PlayingDeck = playingDeck;
+            Wins = wins;
+            Losses = losses;
         }
         public string UserName { get; set; }
-
+        public string Password { get; set; }
+        public int ID { get; set; }
         public int Elo { get; set; }
-        public int Wins { get; set; }
-        public int Losses { get; set; }
+        public int Coins { get; set; }
+        public int Packages { get; set; }
         public Deck Stack { get; set; }
         public Deck PlayingDeck { get; set; }
-
-        private int Packages;
-        private int Coins;
-        private int ID;
-        public string Password;
-        private string Token;
+        public int Wins { get; set; }
+        public int Losses { get; set; }
+        private string Token { get; set; }
 
         public void ChooseDeck()
         {
