@@ -9,12 +9,13 @@ namespace SWE.Models
 {
     public class Deck
     {
-        public Deck(string Name) {
-            this.Name = Name;
-            this.PlayerStack = new List<Card>();
+        public Deck(string name)
+        {
+            Name = name;
+            PlayerStack = new List<Card>();
         }
-        public string Name;
-        
+
+        public string Name { get; set; }
         public List<Card> PlayerStack { get; set; }
     }
 }
